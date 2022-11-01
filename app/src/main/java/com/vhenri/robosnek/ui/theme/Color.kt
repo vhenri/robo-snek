@@ -2,7 +2,7 @@ package com.vhenri.robosnek.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val BackgroundColor = Color(0xFFF8C7B8)
+val BackgroundColor = Color(0xFF151516)
 val DarkPurple = Color(0xFF140C24)
 val SnekFoodColor = Color(0xFFFFE603)
 

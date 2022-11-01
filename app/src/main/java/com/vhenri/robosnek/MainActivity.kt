@@ -24,13 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.lifecycleScope
 import com.vhenri.robosnek.game.GameEngine
 import com.vhenri.robosnek.models.GameState
 import com.vhenri.robosnek.models.Snek
 import com.vhenri.robosnek.ui.theme.BaseActivity
-
-import com.vhenri.robosnek.ui.theme.DarkPurple
 import com.vhenri.robosnek.ui.theme.SnekFoodColor
 import kotlinx.coroutines.CoroutineScope
 
@@ -75,7 +74,8 @@ class MainActivity : BaseActivity() {
             Box(
                 Modifier
                     .size(maxWidth)
-                    .border(2.dp, DarkPurple)
+                    .border(2.dp, Color.Gray)
+                    .zIndex(1f)
             )
             Box(
                 Modifier
@@ -84,7 +84,7 @@ class MainActivity : BaseActivity() {
                         y = tileSize * state.snekFood.second
                     )
                     .size(tileSize)
-                    .border(1.dp, Color.Black)
+                    .border(1.dp, Color.White)
                     .background(
                         SnekFoodColor, RoundedCornerShape(4.dp)
                     )
@@ -95,7 +95,7 @@ class MainActivity : BaseActivity() {
                     Box(
                         modifier = Modifier
                             .offset(x = tileSize * it.first, y = tileSize * it.second)
-                            .size(tileSize)
+                            .size(tileSize - 3.dp)
                             .background(
                                 snek.snekBodyColor, CircleShape
                             )
@@ -104,7 +104,7 @@ class MainActivity : BaseActivity() {
                 Box(
                     modifier = Modifier
                         .offset(x = tileSize * snekHead.first, y = tileSize * snekHead.second)
-                        .size(tileSize)
+                        .size(tileSize - 2.dp)
                         .background(
                             snek.snekHeadColor, CircleShape
                         )
@@ -133,7 +133,7 @@ class MainActivity : BaseActivity() {
         Text(
             modifier = modifier,
             text = text,
-            color = Color.Black,
+            color = Color.White,
             style = MaterialTheme.typography.bodyLarge,
             textAlign = textAlign
         )
