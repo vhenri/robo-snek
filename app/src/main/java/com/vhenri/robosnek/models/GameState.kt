@@ -11,6 +11,7 @@ data class GameState(
 
 data class Snek(
     val id: String = generateId(),
+    val snekNumber: Int,
     val snekBody: List<Pair<Int, Int>>,
     val currentDirection: Int,
     val snekBodyColor: Color,

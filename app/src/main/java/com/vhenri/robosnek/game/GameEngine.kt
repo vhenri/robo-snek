@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class GameEngine(
@@ -49,6 +50,7 @@ class GameEngine(
                 Pair(6,1),
                 Pair(6,0)
             ),
+                snekNumber = 0,
                 currentDirection = SnakeDirection.Right,
                 snekBodyColor = SnekPink,
                 snekHeadColor = SnekPinkHead,
@@ -61,6 +63,7 @@ class GameEngine(
                 Pair(1, 6),
                 Pair(0, 6)
             ),
+                snekNumber = 1,
                 currentDirection = SnakeDirection.Right,
                 snekBodyColor = SnekGreen,
                 snekHeadColor = SnekGreenHead,
@@ -82,12 +85,24 @@ class GameEngine(
         return emptyList()
     }
 
+    private fun updateSnekTurn(currentTurn: Int): Int {
+        return if (currentTurn + 1 > numSneks -1 ){
+            0
+        } else {
+            currentTurn + 1
+        }
+    }
+
     init {
         scope.launch {
             while (true) {
                 delay(500)
-                val currentSnekTurn = gameState
-
+                val currentSnekTurn = gameState.value.currentSnekTurn
+                _gameState.update {
+                    it.copy(
+                        currentSnekTurn = updateSnekTurn(currentSnekTurn)
+                    )
+                }
 //                _gameState.update {
 //                    TODO()
 //                }
@@ -97,6 +112,6 @@ class GameEngine(
 
     companion object {
         const val BOARD_SIZE = 7
-        const val NUM_SNEK_PLAYERS = 1
+        const val NUM_SNEK_PLAYERS = 2
     }
 }

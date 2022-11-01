@@ -59,7 +59,7 @@ class MainActivity : BaseActivity() {
                 BoxWithConstraints(Modifier.padding(16.dp)) {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(gameState.snekList) {
-                            GameStats(it)
+                            GameStats(it, gameState.currentSnekTurn)
                         }
                     }
                 }
@@ -114,7 +114,7 @@ class MainActivity : BaseActivity() {
     }
 
     @Composable
-    fun GameStats(snek: Snek){
+    fun GameStats(snek: Snek, currentTurn: Int){
         Row {
             Box(
                 modifier = Modifier
@@ -124,7 +124,9 @@ class MainActivity : BaseActivity() {
                         snek.snekHeadColor, CircleShape
                     )
             )
-            BodyLarge(text = "Score: ${snek.score}")
+            var text = "Score: ${snek.score}"
+            if (currentTurn == snek.snekNumber) text += " <--- "
+            BodyLarge(text = text)
         }
     }
 
@@ -134,7 +136,7 @@ class MainActivity : BaseActivity() {
             modifier = modifier,
             text = text,
             color = Color.White,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.displayLarge,
             textAlign = textAlign
         )
     }
