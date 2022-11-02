@@ -13,7 +13,7 @@ data class Snek(
     val id: String = generateId(),
     val snekNumber: Int,
     val snekBody: List<Pair<Int, Int>>,
-    val currentDirection: Int,
+    val currentDirection: SnekDirection,
     val snekBodyColor: Color,
     val snekHeadColor: Color,
     val score: Int

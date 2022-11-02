@@ -1,7 +1,8 @@
 package com.vhenri.robosnek.game
 
+import android.util.Log
 import com.vhenri.robosnek.models.GameState
-import com.vhenri.robosnek.models.SnakeDirection
+import com.vhenri.robosnek.models.SnekDirection
 import com.vhenri.robosnek.models.Snek
 import com.vhenri.robosnek.ui.theme.SnekGreen
 import com.vhenri.robosnek.ui.theme.SnekGreenHead
@@ -13,14 +14,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class GameEngine(
     private val scope: CoroutineScope,
     private val numSneks: Int = NUM_SNEK_PLAYERS,
 ) {
+    private val mutex = Mutex()
     private val _gameState: MutableStateFlow<GameState> =
         MutableStateFlow(initGameState())
     val gameState = _gameState.asStateFlow()
+
+    var move = Pair(1, 0)
+        set(value) {
+            scope.launch {
+                mutex.withLock {
+                    field = value
+                }
+            }
+        }
 
     private fun initGameState(): GameState {
         val snekFoodLocation = initSnekFood()
@@ -51,7 +64,7 @@ class GameEngine(
                 Pair(6,0)
             ),
                 snekNumber = 0,
-                currentDirection = SnakeDirection.Right,
+                currentDirection = SnekDirection.RIGHT,
                 snekBodyColor = SnekPink,
                 snekHeadColor = SnekPinkHead,
                 score = 0
@@ -64,7 +77,7 @@ class GameEngine(
                 Pair(0, 6)
             ),
                 snekNumber = 1,
-                currentDirection = SnakeDirection.Right,
+                currentDirection = SnekDirection.RIGHT,
                 snekBodyColor = SnekGreen,
                 snekHeadColor = SnekGreenHead,
                 score = 0
@@ -77,12 +90,27 @@ class GameEngine(
         // - reset snek body & current direction
     }
 
-    fun calculateValidDirections(): List<SnakeDirection?>{
-        // TODO
-        // 1. check for boundaries with game board
-        // 2. check for snek segments (other or own)
-        // return list of valid directions or empty list if none available
-        return emptyList()
+    fun calculateValidDirections(head: Pair<Int, Int>): List<SnekDirection?>{
+        val validDirections = mutableListOf<SnekDirection>()
+
+        if (isValidDirection(moveSnek(head,SnekDirection.UP))) validDirections.add(SnekDirection.UP)
+        if (isValidDirection(moveSnek(head, SnekDirection.DOWN))) validDirections.add(SnekDirection.DOWN)
+        if (isValidDirection(moveSnek(head, SnekDirection.LEFT))) validDirections.add(SnekDirection.LEFT)
+        if (isValidDirection(moveSnek(head, SnekDirection.RIGHT))) validDirections.add(SnekDirection.RIGHT)
+
+        return validDirections
+    }
+
+    fun isValidDirection(coord: Pair<Int, Int>): Boolean {
+        // check top & bottom boundaries
+        if (coord.first < 0 || coord.first > BOARD_SIZE -1) return false
+        // check left & right boundaries
+        if (coord.second <0 || coord.second > BOARD_SIZE -1) return false
+        // check for body
+        for (snek in gameState.value.snekList){
+            if (snek.snekBody.contains(coord)) return false
+        }
+        return true
     }
 
     private fun updateSnekTurn(currentTurn: Int): Int {
@@ -93,11 +121,23 @@ class GameEngine(
         }
     }
 
+    private fun moveSnek(head: Pair<Int, Int>, direction: SnekDirection): Pair<Int, Int> {
+        return when (direction){
+            SnekDirection.UP -> Pair(head.first, head.second - 1) // Move up - (0, -1)
+            SnekDirection.DOWN -> Pair(head.first, head.second + 1) // Move Down - (0, 1)
+            SnekDirection.RIGHT -> Pair(head.first + 1, head.second) // Move right - (1, 0)
+            SnekDirection.LEFT -> Pair(head.first - 1, head.second) // Move Left - (-1, 0)
+        }
+    }
+
     init {
         scope.launch {
             while (true) {
                 delay(500)
                 val currentSnekTurn = gameState.value.currentSnekTurn
+                val currentSnek = gameState.value.snekList[currentSnekTurn]
+                val validDirections = calculateValidDirections(currentSnek.snekBody.first())
+                Log.d("###", "Current Snek: ${currentSnek.snekNumber} - ${validDirections}")
                 _gameState.update {
                     it.copy(
                         currentSnekTurn = updateSnekTurn(currentSnekTurn)
