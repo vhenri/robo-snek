@@ -1,6 +1,5 @@
 package com.vhenri.robosnek.game
 
-import android.util.Log
 import com.vhenri.robosnek.models.GameState
 import com.vhenri.robosnek.models.SnekDirection
 import com.vhenri.robosnek.models.Snek
@@ -57,10 +56,6 @@ class GameEngine(
         // - all sneks start with a score of 0
         return listOf(
             Snek(snekBody = listOf(
-                Pair(4, 2),
-                Pair(5,2),
-                Pair(6,2),
-                Pair(6,1),
                 Pair(6,0)
             ),
                 snekNumber = 0,
@@ -70,10 +65,6 @@ class GameEngine(
                 score = 0
             ),
             Snek(snekBody = listOf(
-                Pair(1, 3),
-                Pair(1, 4),
-                Pair(1, 5),
-                Pair(1, 6),
                 Pair(0, 6)
             ),
                 snekNumber = 1,
@@ -88,17 +79,6 @@ class GameEngine(
     fun onFoodEaten() {
         // TODO - increment snek score
         // - reset snek body & current direction
-    }
-
-    fun calculateValidDirections(head: Pair<Int, Int>): List<SnekDirection?>{
-        val validDirections = mutableListOf<SnekDirection>()
-
-        if (isValidDirection(moveSnek(head,SnekDirection.UP))) validDirections.add(SnekDirection.UP)
-        if (isValidDirection(moveSnek(head, SnekDirection.DOWN))) validDirections.add(SnekDirection.DOWN)
-        if (isValidDirection(moveSnek(head, SnekDirection.LEFT))) validDirections.add(SnekDirection.LEFT)
-        if (isValidDirection(moveSnek(head, SnekDirection.RIGHT))) validDirections.add(SnekDirection.RIGHT)
-
-        return validDirections
     }
 
     fun isValidDirection(coord: Pair<Int, Int>): Boolean {
@@ -121,7 +101,7 @@ class GameEngine(
         }
     }
 
-    private fun moveSnek(head: Pair<Int, Int>, direction: SnekDirection): Pair<Int, Int> {
+    private fun nextSnekCoord(head: Pair<Int, Int>, direction: SnekDirection): Pair<Int, Int> {
         return when (direction){
             SnekDirection.UP -> Pair(head.first, head.second - 1) // Move up - (0, -1)
             SnekDirection.DOWN -> Pair(head.first, head.second + 1) // Move Down - (0, 1)
@@ -130,22 +110,50 @@ class GameEngine(
         }
     }
 
+    private fun calculateOptimalMovement(head: Pair<Int, Int>): SnekDirection? {
+        val food = gameState.value.snekFood
+        if (head.first > food.first && isValidDirection(nextSnekCoord(head, SnekDirection.LEFT))) return SnekDirection.LEFT
+        if (head.first < food.first && isValidDirection(nextSnekCoord(head, SnekDirection.RIGHT))) return SnekDirection.RIGHT
+        if (head.second > food.second && isValidDirection(nextSnekCoord(head, SnekDirection.UP))) return SnekDirection.UP
+        if (head.second < food.second && isValidDirection(nextSnekCoord(head, SnekDirection.DOWN))) return SnekDirection.DOWN
+        return null
+    }
+
+    private fun moveSnek(snekList: List<Snek>, currentSnekTurn: Int): List<Snek>{
+        val currentSnek = snekList[currentSnekTurn]
+        val optimalDirection = calculateOptimalMovement(currentSnek.snekBody.first())
+        val newSnekList = snekList.toMutableList()
+
+        val newSnek = if (optimalDirection != null){
+            val newSnekBody = currentSnek.snekBody.toMutableList()
+            val newHead = nextSnekCoord(currentSnek.snekBody.first(), optimalDirection)
+            newSnekBody.add(0, newHead)
+            currentSnek.copy(
+                snekBody = newSnekBody,
+                currentDirection = optimalDirection
+            )
+        } else {
+            currentSnek.copy(
+                currentDirection = null
+            )
+        }
+        newSnekList[currentSnekTurn] = newSnek
+        return newSnekList
+
+    }
+
     init {
         scope.launch {
             while (true) {
                 delay(500)
                 val currentSnekTurn = gameState.value.currentSnekTurn
-                val currentSnek = gameState.value.snekList[currentSnekTurn]
-                val validDirections = calculateValidDirections(currentSnek.snekBody.first())
-                Log.d("###", "Current Snek: ${currentSnek.snekNumber} - ${validDirections}")
-                _gameState.update {
+                val newSnekList = moveSnek(gameState.value.snekList, currentSnekTurn)
+                 _gameState.update {
                     it.copy(
-                        currentSnekTurn = updateSnekTurn(currentSnekTurn)
+                        currentSnekTurn = updateSnekTurn(currentSnekTurn),
+                        snekList = newSnekList
                     )
                 }
-//                _gameState.update {
-//                    TODO()
-//                }
             }
         }
     }
