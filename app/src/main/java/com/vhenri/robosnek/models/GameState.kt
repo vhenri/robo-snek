@@ -12,11 +12,11 @@ data class GameState(
 data class Snek(
     val id: String = generateId(),
     val snekNumber: Int,
-    val snekBody: List<Pair<Int, Int>>,
-    val currentDirection: SnekDirection?,
+    var snekBody: List<Pair<Int, Int>>,
+    var currentDirection: SnekDirection?,
     val snekBodyColor: Color,
     val snekHeadColor: Color,
-    val score: Int
+    var score: Int
 ){
     companion object {
         private const val prefix = "RoboSnek"

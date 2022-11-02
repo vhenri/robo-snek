@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class GameEngine(
     private val scope: CoroutineScope,
@@ -24,15 +23,6 @@ class GameEngine(
     private val _gameState: MutableStateFlow<GameState> =
         MutableStateFlow(initGameState())
     val gameState = _gameState.asStateFlow()
-
-    var move = Pair(1, 0)
-        set(value) {
-            scope.launch {
-                mutex.withLock {
-                    field = value
-                }
-            }
-        }
 
     private fun initGameState(): GameState {
         val snekFoodLocation = initSnekFood()
@@ -44,19 +34,28 @@ class GameEngine(
         )
     }
 
+    private fun randomCoord(exclude: Pair<Int, Int>? = null): Pair<Int,Int>{
+        val coord = Pair(
+            rand(BOARD_SIZE),
+            rand(BOARD_SIZE)
+        )
+        return if (coord == exclude){
+            randomCoord(exclude)
+        } else {
+            coord
+        }
+    }
+
     private fun initSnekFood(): Pair<Int, Int> {
-        // TODO - randomly choose a location for the snek food to start.
-        return Pair(2,1)
+        return randomCoord()
     }
 
     private fun initSneks(numSneks: Int, foodLocation: Pair<Int, Int>): List<Snek> {
         // TODO - loop through the number of sneks required
-        // - randomly choose start location (cannot be snek food?)
-        // - set snek direction
         // - all sneks start with a score of 0
         return listOf(
             Snek(snekBody = listOf(
-                Pair(6,0)
+                randomCoord(foodLocation)
             ),
                 snekNumber = 0,
                 currentDirection = SnekDirection.RIGHT,
@@ -65,7 +64,7 @@ class GameEngine(
                 score = 0
             ),
             Snek(snekBody = listOf(
-                Pair(0, 6)
+                randomCoord(foodLocation)
             ),
                 snekNumber = 1,
                 currentDirection = SnekDirection.RIGHT,
@@ -76,12 +75,7 @@ class GameEngine(
         )
     }
 
-    fun onFoodEaten() {
-        // TODO - increment snek score
-        // - reset snek body & current direction
-    }
-
-    fun isValidDirection(coord: Pair<Int, Int>): Boolean {
+    private fun isValidDirection(coord: Pair<Int, Int>): Boolean {
         // check top & bottom boundaries
         if (coord.first < 0 || coord.first > BOARD_SIZE -1) return false
         // check left & right boundaries
@@ -112,6 +106,15 @@ class GameEngine(
 
     private fun calculateOptimalMovement(head: Pair<Int, Int>): SnekDirection? {
         val food = gameState.value.snekFood
+//        val xDistanceToFood = head.first - food.first
+//        val yDistanceToFood = head.second - food.second
+//
+//        if (xDistanceToFood > yDistanceToFood){
+//            // move either left or right
+//        } else {
+//            // move either up or down
+//        }
+
         if (head.first > food.first && isValidDirection(nextSnekCoord(head, SnekDirection.LEFT))) return SnekDirection.LEFT
         if (head.first < food.first && isValidDirection(nextSnekCoord(head, SnekDirection.RIGHT))) return SnekDirection.RIGHT
         if (head.second > food.second && isValidDirection(nextSnekCoord(head, SnekDirection.UP))) return SnekDirection.UP
@@ -119,7 +122,7 @@ class GameEngine(
         return null
     }
 
-    private fun moveSnek(snekList: List<Snek>, currentSnekTurn: Int): List<Snek>{
+    private fun moveSnek(snekList: List<Snek>, currentSnekTurn: Int, foodCoord: Pair<Int, Int>): Pair<List<Snek>, Pair<Int,Int>?>{
         val currentSnek = snekList[currentSnekTurn]
         val optimalDirection = calculateOptimalMovement(currentSnek.snekBody.first())
         val newSnekList = snekList.toMutableList()
@@ -138,8 +141,30 @@ class GameEngine(
             )
         }
         newSnekList[currentSnekTurn] = newSnek
-        return newSnekList
 
+        return if (checkFoodEaten(newSnekList[currentSnekTurn], foodCoord)){
+            onFoodEaten(newSnekList,currentSnekTurn)
+        } else {
+            Pair(newSnekList, null)
+        }
+
+    }
+
+    private fun checkFoodEaten(currentSnek: Snek, foodCoord: Pair<Int,Int>): Boolean {
+        return (currentSnek.snekBody.first() == foodCoord)
+    }
+
+    private fun onFoodEaten(snekList: MutableList<Snek>, currentSnekTurn: Int): Pair<List<Snek>, Pair<Int, Int>> {
+        val newFoodCoord = randomCoord()
+        for (snek in snekList){
+            if (snek.snekNumber == currentSnekTurn){
+                snek.score ++
+            }
+            snek.snekBody = listOf(randomCoord(newFoodCoord))
+            snek.currentDirection = SnekDirection.RIGHT
+        }
+
+        return Pair(snekList, newFoodCoord)
     }
 
     init {
@@ -147,13 +172,28 @@ class GameEngine(
             while (true) {
                 delay(500)
                 val currentSnekTurn = gameState.value.currentSnekTurn
-                val newSnekList = moveSnek(gameState.value.snekList, currentSnekTurn)
-                 _gameState.update {
-                    it.copy(
-                        currentSnekTurn = updateSnekTurn(currentSnekTurn),
-                        snekList = newSnekList
-                    )
+                val currentSnek = gameState.value.snekList[currentSnekTurn]
+                val currentFoodCoord = gameState.value.snekFood
+
+                // Check if the snek is stuck
+                if (currentSnek.currentDirection != null ){
+                    val snekList = gameState.value.snekList
+                    val newSnekList = moveSnek(snekList, currentSnekTurn, currentFoodCoord)
+                    _gameState.update {
+                        it.copy(
+                            currentSnekTurn = updateSnekTurn(currentSnekTurn),
+                            snekList = newSnekList.first,
+                            snekFood = newSnekList.second ?: currentFoodCoord
+                        )
+                    }
+                } else {
+                    _gameState.update {
+                        it.copy(
+                            currentSnekTurn = updateSnekTurn(currentSnekTurn),
+                        )
+                    }
                 }
+
             }
         }
     }
