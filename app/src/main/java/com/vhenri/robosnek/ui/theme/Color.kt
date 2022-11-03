@@ -13,3 +13,11 @@ val SnekPinkHead = Color(0xFFEC198A)
 // Snek2 Color
 val SnekGreen = Color(0xFF1B5E20)
 val SnekGreenHead = Color(0xFF1AD527)
+
+// Snek3 Color
+val SnekBlue = Color(0xFF0D47A1)
+val SnekBlueHead = Color(0xFF1262DD)
+
+// Snek4 Color
+val SnekOrange = Color(0xFF833911)
+val SnekOrangeHead = Color(0xFFE65100)

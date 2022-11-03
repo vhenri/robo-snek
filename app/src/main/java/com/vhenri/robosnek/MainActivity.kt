@@ -35,8 +35,10 @@ import kotlinx.coroutines.CoroutineScope
 
 class MainActivity : BaseActivity() {
     private lateinit var scope: CoroutineScope
+    private var boardSize = GameEngine.BOARD_SIZE
     private var gameEngine = GameEngine(
         scope = lifecycleScope,
+        boardSize = boardSize
     )
 
     @Composable
@@ -55,11 +57,17 @@ class MainActivity : BaseActivity() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             state.value?.let { gameState ->
+                BoxWithConstraints(Modifier.padding(16.dp)) {
+                    GameStats(
+                        stalemateRounds = gameState.stalemateRounds,
+                        stuckSneks = gameState.stuckSneks
+                    )
+                }
                 Board(gameState)
                 BoxWithConstraints(Modifier.padding(16.dp)) {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(gameState.snekList) {
-                            GameStats(it, gameState.currentSnekTurn)
+                            SnekScores(it, gameState.currentSnekTurn)
                         }
                     }
                 }
@@ -70,7 +78,7 @@ class MainActivity : BaseActivity() {
     @Composable
     fun Board(state: GameState) {
         BoxWithConstraints(Modifier.padding(16.dp)) {
-            val tileSize = maxWidth / GameEngine.BOARD_SIZE
+            val tileSize = maxWidth / boardSize
             Box(
                 Modifier
                     .size(maxWidth)
@@ -84,7 +92,6 @@ class MainActivity : BaseActivity() {
                         y = tileSize * state.snekFood.second
                     )
                     .size(tileSize)
-                    .border(1.dp, Color.White)
                     .background(
                         SnekFoodColor, RoundedCornerShape(4.dp)
                     )
@@ -114,7 +121,7 @@ class MainActivity : BaseActivity() {
     }
 
     @Composable
-    fun GameStats(snek: Snek, currentTurn: Int){
+    fun SnekScores(snek: Snek, currentTurn: Int){
         Row {
             Box(
                 modifier = Modifier
@@ -131,12 +138,40 @@ class MainActivity : BaseActivity() {
     }
 
     @Composable
+    fun GameStats(stalemateRounds: Int, stuckSneks:Int) {
+        Column {
+            Row {
+                TitleLarge(text = "RoboSneks")
+            }
+            Row {
+                val text = "Stalemate Rounds : $stalemateRounds"
+                BodyLarge(text = text)
+            }
+            Row {
+                val text = "Stuck Sneks : $stuckSneks"
+                BodyLarge(text = text)
+            }
+        }
+    }
+
+    @Composable
     fun BodyLarge(modifier: Modifier = Modifier, text: String, textAlign: TextAlign = TextAlign.Start) {
         Text(
             modifier = modifier,
             text = text,
             color = Color.White,
             style = MaterialTheme.typography.displayLarge,
+            textAlign = textAlign
+        )
+    }
+    
+    @Composable
+    fun TitleLarge(modifier: Modifier = Modifier, text: String, textAlign: TextAlign = TextAlign.Start) {
+        Text(
+            modifier = modifier,
+            text = text,
+            color = Color.White,
+            style = MaterialTheme.typography.headlineLarge,
             textAlign = textAlign
         )
     }

@@ -6,7 +6,9 @@ import java.util.UUID
 data class GameState(
     val snekFood: Pair<Int, Int>,
     val snekList: List<Snek>,
-    val currentSnekTurn: Int
+    val currentSnekTurn: Int,
+    var stuckSneks: Int,
+    var stalemateRounds: Int,
 )
 
 data class Snek(
