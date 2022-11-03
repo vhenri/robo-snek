@@ -11,7 +11,6 @@ import com.vhenri.robosnek.ui.theme.SnekOrange
 import com.vhenri.robosnek.ui.theme.SnekOrangeHead
 import com.vhenri.robosnek.ui.theme.SnekPink
 import com.vhenri.robosnek.ui.theme.SnekPinkHead
-import java.lang.Math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class GameEngine(
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val numSneks: Int = NUM_SNEK_PLAYERS,
     private val boardSize: Int,
     private val moveFoodDuring: Boolean = MOVE_FOOD_DURING_PLAY
@@ -135,7 +134,7 @@ class GameEngine(
         else null
     }
 
-    fun calculateValidDirections(head: Pair<Int, Int>): List<SnekDirection?>{
+    private fun calculateValidDirections(head: Pair<Int, Int>): List<SnekDirection?>{
         val validDirections = mutableListOf<SnekDirection>()
 
         if (isValidDirection(nextSnekCoord(head,SnekDirection.UP))) validDirections.add(SnekDirection.UP)
@@ -161,6 +160,7 @@ class GameEngine(
     private fun calculateOptimalMovementBasic(head: Pair<Int, Int>): SnekDirection? {
         // check if stuck, early return
         var validDirections = calculateValidDirections(head)
+        @Suppress("UNCHECKED_CAST")
         if (validDirections.isEmpty()) return null
         else if (validDirections.size == 1) return validDirections.first()
         // Note: we know this cast is OK b/c we early returned the empty list!
@@ -184,11 +184,11 @@ class GameEngine(
         val xDistanceToFood = head.first - food.first
         val yDistanceToFood = head.second - food.second
 
-        if (abs(xDistanceToFood) > abs(yDistanceToFood)) {
+        if (kotlin.math.abs(xDistanceToFood) > kotlin.math.abs(yDistanceToFood)) {
             // try moving left or right first
             val direction = tryMovingHorizontal(validDirections, head.first, food.first)
             if (direction != null) return direction
-        } else if (abs(xDistanceToFood) < abs(yDistanceToFood)){
+        } else if (kotlin.math.abs(xDistanceToFood) < kotlin.math.abs(yDistanceToFood)){
             // try moving up or down
             val direction = tryMovingVertical(validDirections, head.second, food.second)
             if (direction != null) return direction
