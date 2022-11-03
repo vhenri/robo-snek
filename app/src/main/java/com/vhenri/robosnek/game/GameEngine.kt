@@ -27,7 +27,7 @@ class GameEngine(
 ) {
 
     companion object {
-        const val BOARD_SIZE = 4
+        const val BOARD_SIZE = 7
         const val NUM_SNEK_PLAYERS = 4 // max 4
         const val MOVE_FOOD_DURING_PLAY = false
     }
