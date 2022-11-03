@@ -27,8 +27,9 @@ class GameEngine(
 ) {
 
     companion object {
-        const val BOARD_SIZE = 7
-        const val NUM_SNEK_PLAYERS = 4 // max 4
+        const val TURN_DELAY = 500L
+        const val BOARD_SIZE = 10
+        const val NUM_SNEK_PLAYERS = 4 // MAX 4!!
         const val MOVE_FOOD_DURING_PLAY = false
     }
 
@@ -46,18 +47,6 @@ class GameEngine(
             stuckSneks = 0,
             stalemateRounds = 0
         )
-    }
-
-    private fun randomCoord(exclude: List<Pair<Int, Int>>? = null): Pair<Int,Int>{
-        val coord = Pair(
-            rand(boardSize),
-            rand(boardSize)
-        )
-        return if ( exclude!= null && exclude.contains(coord) && exclude.size != (boardSize*boardSize)){
-            randomCoord(exclude)
-        } else {
-            coord
-        }
     }
 
     private fun initSnekFood(): Pair<Int, Int> {
@@ -105,6 +94,17 @@ class GameEngine(
         ).take(numSneks)
     }
 
+    private fun randomCoord(exclude: List<Pair<Int, Int>>? = null): Pair<Int,Int>{
+        val coord = Pair(
+            rand(boardSize),
+            rand(boardSize)
+        )
+        return if ( exclude!= null && exclude.contains(coord) && exclude.size != (boardSize*boardSize)){
+            randomCoord(exclude)
+        } else {
+            coord
+        }
+    }
 
     private fun updateSnekTurn(currentTurn: Int): Int {
         return if (currentTurn + 1 > numSneks -1 ){
@@ -150,7 +150,7 @@ class GameEngine(
         // check top & bottom boundaries
         if (coord.first < 0 || coord.first > boardSize -1) return false
         // check left & right boundaries
-        if (coord.second <0 || coord.second > boardSize -1) return false
+        if (coord.second < 0 || coord.second > boardSize -1) return false
         // check for body
         for (snek in gameState.value.snekList){
             if (snek.snekBody.contains(coord)) return false
@@ -159,10 +159,11 @@ class GameEngine(
     }
 
     private fun calculateOptimalMovementBasic(head: Pair<Int, Int>): SnekDirection? {
-        // check if stuck
+        // check if stuck, early return
         var validDirections = calculateValidDirections(head)
         if (validDirections.isEmpty()) return null
         else if (validDirections.size == 1) return validDirections.first()
+        // Note: we know this cast is OK b/c we early returned the empty list!
         else validDirections = validDirections as List<SnekDirection>
 
         val food = gameState.value.snekFood
@@ -211,9 +212,8 @@ class GameEngine(
             }
         }
 
-        // pick one at random lol
-        val selectRandom = rand(validDirections.size)
-        return validDirections[selectRandom]
+        // Worst case, pick one at random lol
+        return validDirections[rand(validDirections.size)]
     }
 
     private fun moveSnek(snekList: List<Snek>, currentSnekTurn: Int, foodCoord: Pair<Int, Int>): Pair<List<Snek>, Pair<Int,Int>?>{
@@ -277,7 +277,7 @@ class GameEngine(
     init {
         scope.launch {
             while (true) {
-                delay(100)
+                delay(TURN_DELAY)
                 val currentSnekTurn = gameState.value.currentSnekTurn
                 val currentSnek = gameState.value.snekList[currentSnekTurn]
                 val currentFoodCoord = gameState.value.snekFood
@@ -321,7 +321,6 @@ class GameEngine(
                         }
                     }
                 }
-
             }
         }
     }
