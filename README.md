@@ -1,4 +1,4 @@
-# RoboSneks
+# [RoboSnek](https://github.com/vhenri/robo-snek)
 A competitive(?) game of snake/tron between two to four RoboSneks!
 
 ##  Goals
