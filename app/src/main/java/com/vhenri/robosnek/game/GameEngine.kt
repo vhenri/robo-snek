@@ -12,6 +12,7 @@ import com.vhenri.robosnek.ui.theme.SnekOrangeHead
 import com.vhenri.robosnek.ui.theme.SnekPink
 import com.vhenri.robosnek.ui.theme.SnekPinkHead
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -160,7 +161,7 @@ class GameEngine(
     private fun calculateOptimalMovementBasic(head: Pair<Int, Int>): SnekDirection? {
         // check if stuck, early return
         var validDirections = calculateValidDirections(head)
-        @Suppress("UNCHECKED_CAST")
+
         if (validDirections.isEmpty()) return null
         else if (validDirections.size == 1) return validDirections.first()
         // Note: we know this cast is OK b/c we early returned the empty list!
@@ -263,10 +264,10 @@ class GameEngine(
 
     private fun moveFoodDuringPlay(currentFoodLocation: Pair<Int, Int>, snekList: List<Snek> ): Pair<Int, Int> {
         val allOccupiedLocations: MutableList<Pair<Int, Int>> = mutableListOf(currentFoodLocation)
+        for (snek in snekList){
+            allOccupiedLocations+=snek.snekBody
+        }
         return if (allOccupiedLocations.size != (boardSize*boardSize)){
-            for (snek in snekList){
-                allOccupiedLocations+=snek.snekBody
-            }
             randomCoord(allOccupiedLocations)
         } else {
             currentFoodLocation
@@ -275,7 +276,7 @@ class GameEngine(
     }
 
     init {
-        scope.launch {
+        scope.launch(Dispatchers.Default) {
             while (true) {
                 delay(TURN_DELAY)
                 val currentSnekTurn = gameState.value.currentSnekTurn
